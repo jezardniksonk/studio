@@ -30,31 +30,6 @@ const PackingSuggestionsOutputSchema = z.object({
 });
 export type PackingSuggestionsOutput = z.infer<typeof PackingSuggestionsOutputSchema>;
 
-const DidYouForgetTool = ai.defineTool({
-  name: 'didYouForget',
-  description: 'Checks if the user has forgotten any essential items based on common user oversights.',
-  inputSchema: z.object({
-    tripType: z
-      .string()
-      .describe('The type of trip (e.g., beach, business, hiking).'),
-    packingList: z
-      .array(z.string())
-      .describe('The current packing list to check for omissions.'),
-  }),
-  outputSchema: z.array(z.string()).describe('A list of potentially forgotten items.'),
-  async implementation(input) {
-    // Dummy implementation - replace with actual logic
-    const forgottenItems: string[] = [];
-    if (input.tripType === 'beach' && !input.packingList.includes('sunscreen')) {
-      forgottenItems.push('sunscreen');
-    }
-    if (input.tripType === 'business' && !input.packingList.includes('laptop')) {
-      forgottenItems.push('laptop');
-    }
-    return forgottenItems;
-  },
-});
-
 export async function packingSuggestions(
   input: PackingSuggestionsInput
 ): Promise<PackingSuggestionsOutput> {
@@ -65,14 +40,13 @@ const prompt = ai.definePrompt({
   name: 'packingSuggestionsPrompt',
   input: {schema: PackingSuggestionsInputSchema},
   output: {schema: PackingSuggestionsOutputSchema},
-  tools: [DidYouForgetTool],
-  prompt: `You are a packing assistant. Based on the trip type ({{{tripType}}}), duration ({{{duration}}} days), and destination weather ({{{destinationWeather}}}), suggest a packing list.
+  prompt: `You are a packing assistant. Based on the trip type ({{{tripType}}}), duration ({{{duration}}} days), and destination weather ({{{destinationWeather}}}), suggest a comprehensive packing list.
 
-If the user is going on a trip, always remind them to bring essentials like phone and wallet, even if it is not explicitly asked for.
+Ensure to include common essentials appropriate for the trip, such as phone, wallet, chargers, and any relevant travel documents, even if not explicitly derived from the other inputs. Consider items that are frequently forgotten.
 
-Based on common user oversights, use the didYouForget tool to determine if the user may have forgotten any critical items.  If items are suggested by the tool, include them in the list.
+Provide the output as a list of items.
 
-Packing List:`, // Make sure the prompt is valid Handlebars.
+Packing List:`,
 });
 
 const packingSuggestionsFlow = ai.defineFlow(
