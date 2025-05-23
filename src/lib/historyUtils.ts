@@ -24,7 +24,7 @@ export function addTripToHistory(
   tripDetails: TripDetails,
   packingList: PackingItem[],
   weather: WeatherInfo | null,
-  destinationImages: DestinationImage[] | null
+  destinationImages: DestinationImage[] | null // This parameter is kept for signature consistency but won't be stored
 ): HistoricalTrip[] {
   if (typeof window === 'undefined') {
     return [];
@@ -36,7 +36,7 @@ export function addTripToHistory(
     tripDetails,
     packingList,
     weather,
-    destinationImages,
+    destinationImages: null, // Do not store large images in localStorage to prevent quota errors
   };
 
   const updatedHistory = [newHistoricalTrip, ...currentHistory].slice(0, MAX_HISTORY_ITEMS);
@@ -44,7 +44,14 @@ export function addTripToHistory(
   try {
     localStorage.setItem(PACKSMART_TRIP_HISTORY_KEY, JSON.stringify(updatedHistory));
   } catch (error) {
-    console.error("Error saving trip history to localStorage:", error);
+    // It's still possible to hit quota if other data is extremely large,
+    // or if this function is called very rapidly before UI updates.
+    console.error("Error saving trip history to localStorage:", error); 
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      // Potentially try to remove the oldest item and retry, or just log and accept failure.
+      // For now, we'll just log it, as image removal should significantly reduce the chance.
+      console.warn("LocalStorage quota exceeded even after removing images from history item. Consider reducing MAX_HISTORY_ITEMS or data stored per trip.");
+    }
   }
   return updatedHistory;
 }
@@ -59,3 +66,4 @@ export function clearTripHistory(): void {
     console.error("Error clearing trip history from localStorage:", error);
   }
 }
+
