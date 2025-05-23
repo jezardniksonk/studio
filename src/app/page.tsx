@@ -7,7 +7,7 @@ import { PackingList } from '@/components/packing-list';
 import { WeatherDisplay } from '@/components/weather-display';
 import { Logo } from '@/components/logo';
 import type { TripDetails, PackingItem, WeatherInfo } from '@/lib/types';
-import { getPackingSuggestionsAction } from '@/lib/actions';
+import { getPackingSuggestionsAction, getForgottenItemSuggestionsAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { nanoid } from 'nanoid';
@@ -18,16 +18,14 @@ export default function HomePage() {
   const [weather, setWeather] = useState<WeatherInfo | null>(null);
   const [packingList, setPackingList] = useState<PackingItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuggestingForgottenItems, setIsSuggestingForgottenItems] = useState(false);
   const { toast } = useToast();
-
-  // Effect to ensure nanoid is only used client-side after mount if needed for initial state.
-  // Here, nanoid is used in server actions or client-side handlers, so direct usage is fine.
 
   const handleTripSubmit = async (data: TripDetails) => {
     setIsLoading(true);
     setTripDetails(data);
-    setPackingList([]); // Clear previous list
-    setWeather(null); // Clear previous weather
+    setPackingList([]); 
+    setWeather(null); 
 
     try {
       const result = await getPackingSuggestionsAction(data);
@@ -38,7 +36,7 @@ export default function HomePage() {
           variant: 'destructive',
         });
         setPackingList([]);
-        setWeather(result.weather); // Display weather even if AI suggestions fail (e.g. "Could not fetch weather")
+        setWeather(result.weather); 
       } else {
         setPackingList(result.packingList);
         setWeather(result.weather);
@@ -55,14 +53,13 @@ export default function HomePage() {
         variant: 'destructive',
       });
       setPackingList([]);
-      setWeather({ destination: data.destination, forecast: "Could not fetch weather data."}); // Set default error weather
+      setWeather({ destination: data.destination, forecast: "Could not fetch weather data."}); 
     } finally {
       setIsLoading(false);
     }
   };
 
   const addItemToList = (itemName: string) => {
-    // Ensure nanoid is available (it should be, as this is a client component)
     const newItem: PackingItem = { id: nanoid(), name: itemName, packed: false, isSuggestion: false };
     setPackingList((prevList) => [...prevList, newItem]);
   };
@@ -78,6 +75,68 @@ export default function HomePage() {
       )
     );
   };
+
+  const handleSuggestForgottenItems = async () => {
+    if (!tripDetails) {
+      toast({
+        title: 'Cannot get suggestions',
+        description: 'Please plan a trip first to get forgotten item suggestions.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (packingList.length === 0) {
+       toast({
+        title: 'Empty List',
+        description: 'Your packing list is currently empty. Add some items or get initial suggestions first.',
+        variant: 'default',
+      });
+      return;
+    }
+
+    setIsSuggestingForgottenItems(true);
+    const currentPackedNames = packingList.map(item => item.name);
+    
+    try {
+      const { suggestions, error } = await getForgottenItemSuggestionsAction(tripDetails, currentPackedNames);
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error,
+          variant: 'destructive',
+        });
+      } else if (suggestions.length === 0) {
+        toast({
+          title: 'All Good!',
+          description: "Looks like you haven't forgotten any common essentials for this trip type based on your current list!",
+        });
+      } else {
+        const newItems = suggestions.filter(s => !packingList.some(ex => ex.name.toLowerCase() === s.name.toLowerCase()));
+        if (newItems.length > 0) {
+          setPackingList(prev => [...prev, ...newItems]);
+          toast({
+            title: 'New Suggestions Added!',
+            description: `We found ${newItems.length} more item(s) you might need.`,
+          });
+        } else {
+           toast({
+            title: 'No New Items',
+            description: "We double-checked, but it seems our previous suggestions already covered common forgotten items, or they are already on your list!",
+          });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while suggesting forgotten items.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSuggestingForgottenItems(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen flex flex-col items-center p-4 md:p-8 bg-background font-sans">
@@ -99,6 +158,9 @@ export default function HomePage() {
             onRemoveItem={removeItemFromList}
             onToggleItem={toggleItemPacked}
             isLoading={isLoading}
+            onSuggestForgottenItems={handleSuggestForgottenItems}
+            isSuggestingForgottenItems={isSuggestingForgottenItems}
+            hasTripDetails={!!tripDetails}
           />
         </div>
       </main>

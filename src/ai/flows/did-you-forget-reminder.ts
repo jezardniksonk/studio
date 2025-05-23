@@ -16,7 +16,7 @@ const DidYouForgetReminderInputSchema = z.object({
   tripType: z
     .string()
     .describe('The type of trip (e.g., beach, business, hiking).'),
-  duration: z.string().describe('The duration of the trip in days.'),
+  duration: z.number().describe('The duration of the trip in days.'), // Changed from z.string() to z.number()
   packedItems: z
     .array(z.string())
     .describe('A list of items the user has already packed.'),
@@ -40,13 +40,13 @@ const prompt = ai.definePrompt({
   name: 'didYouForgetReminderPrompt',
   input: {schema: DidYouForgetReminderInputSchema},
   output: {schema: DidYouForgetReminderOutputSchema},
-  prompt: `You are a helpful packing assistant. Given the type of trip, duration, and a list of items the user has already packed, you will suggest a list of commonly forgotten items that the user might need. Focus on essential items that are easily forgotten.
+  prompt: `You are a helpful packing assistant. Given the type of trip, duration, and a list of items the user has already packed, you will suggest a list of commonly forgotten items that the user might need. Focus on essential items that are easily forgotten. Do not suggest items already in the packed list.
 
 Trip Type: {{{tripType}}}
 Duration: {{{duration}}} days
-Packed Items: {{#each packedItems}}{{{this}}}, {{/each}}
+Packed Items: {{#if packedItems}}{{#each packedItems}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{else}}None{{/if}}
 
-Suggest commonly forgotten items:`,
+Suggest commonly forgotten items (provide an empty list if no relevant suggestions or if the packed list is empty):`,
 });
 
 const didYouForgetReminderFlow = ai.defineFlow(
@@ -56,6 +56,8 @@ const didYouForgetReminderFlow = ai.defineFlow(
     outputSchema: DidYouForgetReminderOutputSchema,
   },
   async input => {
+    // Ensure packedItems is not empty before calling the prompt if the prompt requires it.
+    // The prompt itself is robust enough to handle empty packedItems with {{#if packedItems}}.
     const {output} = await prompt(input);
     return output!;
   }

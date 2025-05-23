@@ -1,7 +1,9 @@
+
 'use server';
 
 import type { TripDetails, AIPackingSuggestionsInput, PackingItem, WeatherInfo } from '@/lib/types';
-import { packingSuggestions } from '@/ai/flows/packing-suggestions'; // Using the Genkit flow
+import { packingSuggestions } from '@/ai/flows/packing-suggestions'; 
+import { didYouForgetReminder, type DidYouForgetReminderInput } from '@/ai/flows/did-you-forget-reminder';
 import {nanoid} from 'nanoid';
 
 
@@ -75,5 +77,37 @@ export async function getPackingSuggestionsAction(
       weather: weatherOnError, 
       error: errorMessage 
     };
+  }
+}
+
+export async function getForgottenItemSuggestionsAction(
+  tripDetails: TripDetails,
+  packedItemNames: string[]
+): Promise<{ suggestions: PackingItem[]; error?: string }> {
+  try {
+    const aiInput: DidYouForgetReminderInput = {
+      tripType: tripDetails.tripType,
+      duration: tripDetails.duration,
+      packedItems: packedItemNames,
+    };
+
+    const result = await didYouForgetReminder(aiInput);
+
+    const suggestions: PackingItem[] = result.suggestedItems.map(name => ({
+      id: nanoid(),
+      name,
+      packed: false,
+      isSuggestion: true, 
+    }));
+
+    return { suggestions };
+
+  } catch (error) {
+    console.error('Error getting forgotten item suggestions:', error);
+    let errorMessage = 'Failed to get forgotten item suggestions. Please try again.';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    return { suggestions: [], error: errorMessage };
   }
 }

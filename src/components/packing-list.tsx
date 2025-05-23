@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { PackingItem } from '@/lib/types';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { X, PlusCircle, PackageCheck, ThumbsUp, PackageOpen } from 'lucide-react';
+import { X, PlusCircle, PackageCheck, ThumbsUp, PackageOpen, Lightbulb, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 
@@ -16,9 +17,21 @@ interface PackingListProps {
   onRemoveItem: (itemId: string) => void;
   onToggleItem: (itemId: string) => void;
   isLoading: boolean;
+  onSuggestForgottenItems: () => Promise<void>;
+  isSuggestingForgottenItems: boolean;
+  hasTripDetails: boolean;
 }
 
-export function PackingList({ items, onAddItem, onRemoveItem, onToggleItem, isLoading }: PackingListProps) {
+export function PackingList({ 
+  items, 
+  onAddItem, 
+  onRemoveItem, 
+  onToggleItem, 
+  isLoading,
+  onSuggestForgottenItems,
+  isSuggestingForgottenItems,
+  hasTripDetails
+}: PackingListProps) {
   const [newItemName, setNewItemName] = useState('');
   const [clientItems, setClientItems] = useState<PackingItem[]>([]);
 
@@ -38,10 +51,26 @@ export function PackingList({ items, onAddItem, onRemoveItem, onToggleItem, isLo
 
   return (
     <Card className="w-full shadow-lg bg-card">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-xl flex items-center gap-2">
           <PackageCheck size={24} /> Your Packing List
         </CardTitle>
+        {hasTripDetails && items.length > 0 && (
+           <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onSuggestForgottenItems} 
+            disabled={isLoading || isSuggestingForgottenItems}
+            className="ml-auto"
+          >
+            {isSuggestingForgottenItems ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Lightbulb className="mr-2 h-4 w-4" />
+            )}
+            Reminders
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {isLoading && clientItems.length === 0 && (
@@ -60,7 +89,7 @@ export function PackingList({ items, onAddItem, onRemoveItem, onToggleItem, isLo
            <div className="text-center py-8">
             <PackageOpen size={48} className="mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">Your packing list is empty.</p>
-            <p className="text-sm text-muted-foreground">Fill out the trip details to get started!</p>
+            <p className="text-sm text-muted-foreground">Fill out the trip details to get started or add items manually below!</p>
           </div>
         )}
 
@@ -140,10 +169,10 @@ export function PackingList({ items, onAddItem, onRemoveItem, onToggleItem, isLo
             onChange={(e) => setNewItemName(e.target.value)}
             placeholder="Add a custom item (e.g., My Book)"
             onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-            disabled={isLoading}
+            disabled={isLoading || isSuggestingForgottenItems}
             aria-label="New item name"
           />
-          <Button onClick={handleAddItem} disabled={isLoading || !newItemName.trim()} variant="outline">
+          <Button onClick={handleAddItem} disabled={isLoading || isSuggestingForgottenItems || !newItemName.trim()} variant="outline">
             <PlusCircle className="mr-2 h-4 w-4" /> Add
           </Button>
         </div>
