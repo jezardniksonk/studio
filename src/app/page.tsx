@@ -7,12 +7,17 @@ import { PackingList } from '@/components/packing-list';
 import { WeatherDisplay } from '@/components/weather-display';
 import { DestinationImagesDisplay } from '@/components/destination-images-display';
 import { Logo } from '@/components/logo';
-import type { TripDetails, PackingItem, WeatherInfo, DestinationImage } from '@/lib/types';
+import type { TripDetails, PackingItem, WeatherInfo, DestinationImage, HistoricalTrip } from '@/lib/types';
 import { getPackingSuggestionsAction, getForgottenItemSuggestionsAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { nanoid } from 'nanoid';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Button } from '@/components/ui/button';
+import { History } from 'lucide-react';
+import { TripHistoryDialog } from '@/components/trip-history-dialog';
+import { getTripHistory, addTripToHistory, clearTripHistory as clearHistoryUtil } from '@/lib/historyUtils';
+
 
 export default function HomePage() {
   const [tripDetails, setTripDetails] = useState<TripDetails | null>(null);
@@ -22,6 +27,13 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuggestingForgottenItems, setIsSuggestingForgottenItems] = useState(false);
   const { toast } = useToast();
+
+  const [historicalTrips, setHistoricalTrips] = useState<HistoricalTrip[]>([]);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+
+  useEffect(() => {
+    setHistoricalTrips(getTripHistory());
+  }, []);
 
   const handleTripSubmit = async (data: TripDetails) => {
     setIsLoading(true);
@@ -40,7 +52,7 @@ export default function HomePage() {
         });
         setPackingList([]);
         setWeather(result.weather); 
-        setDestinationImages(result.destinationImages || null); // Still set images if any were partially fetched or on error
+        setDestinationImages(result.destinationImages || null);
       } else {
         setPackingList(result.packingList);
         setWeather(result.weather);
@@ -49,6 +61,9 @@ export default function HomePage() {
           title: 'Suggestions Ready!',
           description: `We've prepared a packing list for your trip to ${data.destination}.`,
         });
+        // Save to history
+        const newHistory = addTripToHistory(data, result.packingList, result.weather, result.destinationImages);
+        setHistoricalTrips(newHistory);
       }
     } catch (error) {
       console.error(error);
@@ -143,12 +158,27 @@ export default function HomePage() {
     }
   };
 
+  const handleClearHistory = () => {
+    clearHistoryUtil();
+    setHistoricalTrips([]);
+    toast({
+      title: 'Trip History Cleared',
+      description: 'All your saved trips have been removed.',
+    });
+  };
+
 
   return (
+    <>
     <div className="min-h-screen flex flex-col items-center p-4 md:p-8 bg-background font-sans">
       <header className="w-full max-w-4xl mb-8 flex justify-between items-center">
         <Logo />
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={() => setIsHistoryDialogOpen(true)} aria-label="View trip history">
+            <History className="h-[1.2rem] w-[1.2rem]" />
+          </Button>
+          <ThemeToggle />
+        </div>
       </header>
 
       <main className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -184,5 +214,12 @@ export default function HomePage() {
         </p>
       </footer>
     </div>
+    <TripHistoryDialog
+        isOpen={isHistoryDialogOpen}
+        onClose={() => setIsHistoryDialogOpen(false)}
+        history={historicalTrips}
+        onClearHistory={handleClearHistory}
+      />
+    </>
   );
 }

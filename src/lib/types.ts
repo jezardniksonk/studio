@@ -29,4 +29,14 @@ export interface DestinationImage {
   id: string;
   src: string; // data URI
   alt: string;
+  isSkeleton?: boolean; // Added for UI display
+}
+
+export interface HistoricalTrip {
+  id: string;
+  timestamp: number; // Unix timestamp
+  tripDetails: TripDetails;
+  packingList: PackingItem[];
+  weather: WeatherInfo | null;
+  destinationImages: DestinationImage[] | null;
 }
