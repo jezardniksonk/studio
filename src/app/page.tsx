@@ -14,8 +14,10 @@ import { Separator } from '@/components/ui/separator';
 import { nanoid } from 'nanoid';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
-import { History } from 'lucide-react';
+import { History, LogIn, UserPlus } from 'lucide-react';
 import { TripHistoryDialog } from '@/components/trip-history-dialog';
+import { LoginDialog } from '@/components/login-dialog';
+import { SignupDialog } from '@/components/signup-dialog';
 import { getTripHistory, addTripToHistory, clearTripHistory as clearHistoryUtil } from '@/lib/historyUtils';
 
 
@@ -30,6 +32,8 @@ export default function HomePage() {
 
   const [historicalTrips, setHistoricalTrips] = useState<HistoricalTrip[]>([]);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+  const [isSignupDialogOpen, setIsSignupDialogOpen] = useState(false);
 
   useEffect(() => {
     setHistoricalTrips(getTripHistory());
@@ -174,6 +178,12 @@ export default function HomePage() {
       <header className="w-full max-w-4xl mb-8 flex justify-between items-center">
         <Logo />
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setIsLoginDialogOpen(true)}>
+            <LogIn className="mr-2 h-4 w-4" /> Login
+          </Button>
+          <Button variant="default" onClick={() => setIsSignupDialogOpen(true)}>
+             <UserPlus className="mr-2 h-4 w-4" /> Sign Up
+          </Button>
           <Button variant="outline" size="icon" onClick={() => setIsHistoryDialogOpen(true)} aria-label="View trip history">
             <History className="h-[1.2rem] w-[1.2rem]" />
           </Button>
@@ -219,7 +229,15 @@ export default function HomePage() {
         onClose={() => setIsHistoryDialogOpen(false)}
         history={historicalTrips}
         onClearHistory={handleClearHistory}
-      />
+    />
+    <LoginDialog
+        isOpen={isLoginDialogOpen}
+        onClose={() => setIsLoginDialogOpen(false)}
+    />
+    <SignupDialog
+        isOpen={isSignupDialogOpen}
+        onClose={() => setIsSignupDialogOpen(false)}
+    />
     </>
   );
 }
