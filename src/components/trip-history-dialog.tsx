@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { HistoricalTrip, PackingItem, DestinationImage, WeatherInfo } from '@/lib/types';
+import type { HistoricalTrip, PackingItem, DestinationImage, WeatherInfo, DailyForecast } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -67,7 +67,11 @@ export function TripHistoryDialog({ isOpen, onClose, history, onClearHistory }: 
           <ScrollArea className="flex-grow my-4 pr-2">
             <Accordion type="single" collapsible className="w-full space-y-3">
               {history.map((trip) => {
-                const todaysForecastFromHistory = trip.weather?.forecasts.find(f => f.label === 'Today') || trip.weather?.forecasts[0];
+                const forecastsInHistory = trip.weather?.forecasts;
+                const todaysForecastFromHistory: DailyForecast | undefined = 
+                  (forecastsInHistory && forecastsInHistory.length > 0)
+                    ? (forecastsInHistory.find(f => f.label === 'Today') || forecastsInHistory[0])
+                    : undefined;
                 return (
                 <AccordionItem value={trip.id} key={trip.id} className="border rounded-lg shadow-sm bg-card">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline">
