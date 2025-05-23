@@ -65,9 +65,14 @@ export async function getPackingSuggestionsAction(
     if (error instanceof Error) {
       errorMessage = error.message;
     }
+    // Ensure a default weather object is returned on error for consistent UI handling
+    const weatherOnError: WeatherInfo = {
+      destination: tripDetails.destination,
+      forecast: 'Could not fetch weather data.',
+    };
     return { 
       packingList: [], 
-      weather: { destination: tripDetails.destination, forecast: 'Could not fetch weather data.' }, 
+      weather: weatherOnError, 
       error: errorMessage 
     };
   }

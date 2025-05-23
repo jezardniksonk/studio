@@ -38,7 +38,7 @@ export default function HomePage() {
           variant: 'destructive',
         });
         setPackingList([]);
-        setWeather({ destination: data.destination, forecast: "Could not fetch weather data."});
+        setWeather(result.weather); // Display weather even if AI suggestions fail (e.g. "Could not fetch weather")
       } else {
         setPackingList(result.packingList);
         setWeather(result.weather);
@@ -55,7 +55,7 @@ export default function HomePage() {
         variant: 'destructive',
       });
       setPackingList([]);
-      setWeather({ destination: data.destination, forecast: "Could not fetch weather data."});
+      setWeather({ destination: data.destination, forecast: "Could not fetch weather data."}); // Set default error weather
     } finally {
       setIsLoading(false);
     }
