@@ -5,8 +5,9 @@ import { useState, useEffect } from 'react';
 import { TripForm } from '@/components/trip-form';
 import { PackingList } from '@/components/packing-list';
 import { WeatherDisplay } from '@/components/weather-display';
+import { DestinationImagesDisplay } from '@/components/destination-images-display';
 import { Logo } from '@/components/logo';
-import type { TripDetails, PackingItem, WeatherInfo } from '@/lib/types';
+import type { TripDetails, PackingItem, WeatherInfo, DestinationImage } from '@/lib/types';
 import { getPackingSuggestionsAction, getForgottenItemSuggestionsAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -17,6 +18,7 @@ export default function HomePage() {
   const [tripDetails, setTripDetails] = useState<TripDetails | null>(null);
   const [weather, setWeather] = useState<WeatherInfo | null>(null);
   const [packingList, setPackingList] = useState<PackingItem[]>([]);
+  const [destinationImages, setDestinationImages] = useState<DestinationImage[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuggestingForgottenItems, setIsSuggestingForgottenItems] = useState(false);
   const { toast } = useToast();
@@ -26,6 +28,7 @@ export default function HomePage() {
     setTripDetails(data);
     setPackingList([]); 
     setWeather(null); 
+    setDestinationImages(null);
 
     try {
       const result = await getPackingSuggestionsAction(data);
@@ -37,9 +40,11 @@ export default function HomePage() {
         });
         setPackingList([]);
         setWeather(result.weather); 
+        setDestinationImages(result.destinationImages || null); // Still set images if any were partially fetched or on error
       } else {
         setPackingList(result.packingList);
         setWeather(result.weather);
+        setDestinationImages(result.destinationImages);
         toast({
           title: 'Suggestions Ready!',
           description: `We've prepared a packing list for your trip to ${data.destination}.`,
@@ -54,6 +59,7 @@ export default function HomePage() {
       });
       setPackingList([]);
       setWeather({ destination: data.destination, forecast: "Could not fetch weather data."}); 
+      setDestinationImages(null);
     } finally {
       setIsLoading(false);
     }
@@ -149,6 +155,13 @@ export default function HomePage() {
         <div className="md:col-span-1 space-y-6">
           <TripForm onSubmit={handleTripSubmit} isLoading={isLoading} />
           { (isLoading || weather) && <WeatherDisplay weather={weather} isLoading={isLoading && !weather} /> }
+          { (isLoading || destinationImages) && tripDetails &&
+            <DestinationImagesDisplay 
+              images={destinationImages} 
+              destinationName={tripDetails.destination}
+              isLoading={isLoading && !destinationImages} 
+            />
+          }
         </div>
 
         <div className="md:col-span-2">

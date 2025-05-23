@@ -1,9 +1,10 @@
 
 'use server';
 
-import type { TripDetails, AIPackingSuggestionsInput, PackingItem, WeatherInfo } from '@/lib/types';
+import type { TripDetails, AIPackingSuggestionsInput, PackingItem, WeatherInfo, DestinationImage } from '@/lib/types';
 import { packingSuggestions } from '@/ai/flows/packing-suggestions'; 
 import { didYouForgetReminder, type DidYouForgetReminderInput } from '@/ai/flows/did-you-forget-reminder';
+import { generateDestinationImages } from '@/ai/flows/generate-destination-images';
 import {nanoid} from 'nanoid';
 
 
@@ -35,7 +36,12 @@ async function fetchWeather(destination: string): Promise<string> {
 
 export async function getPackingSuggestionsAction(
   tripDetails: TripDetails
-): Promise<{ packingList: PackingItem[]; weather: WeatherInfo; error?: string }> {
+): Promise<{ 
+  packingList: PackingItem[]; 
+  weather: WeatherInfo; 
+  destinationImages: DestinationImage[]; 
+  error?: string 
+}> {
   try {
     const destinationWeather = await fetchWeather(tripDetails.destination);
 
@@ -45,9 +51,13 @@ export async function getPackingSuggestionsAction(
       destinationWeather: destinationWeather,
     };
 
-    const result = await packingSuggestions(aiInput);
+    // Fetch packing suggestions and images in parallel
+    const [packingResult, imageResult] = await Promise.all([
+      packingSuggestions(aiInput),
+      generateDestinationImages({ destinationName: tripDetails.destination })
+    ]);
     
-    const packingList: PackingItem[] = result.packingList.map(name => ({
+    const packingList: PackingItem[] = packingResult.packingList.map(name => ({
       id: nanoid(),
       name,
       packed: false,
@@ -59,15 +69,20 @@ export async function getPackingSuggestionsAction(
       forecast: destinationWeather,
     };
 
-    return { packingList, weather };
+    const destinationImages: DestinationImage[] = imageResult.imageDataUris.map((uri, index) => ({
+      id: nanoid(),
+      src: uri,
+      alt: `Destination image ${index + 1} for ${tripDetails.destination}`,
+    }));
+
+    return { packingList, weather, destinationImages };
 
   } catch (error) {
-    console.error('Error getting packing suggestions:', error);
-    let errorMessage = 'Failed to get packing suggestions. Please try again.';
+    console.error('Error getting packing suggestions or images:', error);
+    let errorMessage = 'Failed to get packing suggestions or images. Please try again.';
     if (error instanceof Error) {
       errorMessage = error.message;
     }
-    // Ensure a default weather object is returned on error for consistent UI handling
     const weatherOnError: WeatherInfo = {
       destination: tripDetails.destination,
       forecast: 'Could not fetch weather data.',
@@ -75,6 +90,11 @@ export async function getPackingSuggestionsAction(
     return { 
       packingList: [], 
       weather: weatherOnError, 
+      destinationImages: Array(5).fill(null).map((_, index) => ({ // Return placeholder structure on error
+        id: nanoid(),
+        src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+        alt: `Placeholder image ${index + 1}`
+      })),
       error: errorMessage 
     };
   }

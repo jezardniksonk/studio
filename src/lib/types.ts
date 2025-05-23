@@ -1,3 +1,4 @@
+
 export interface TripDetails {
   destination: string;
   tripType: string;
@@ -22,4 +23,10 @@ export interface AIPackingSuggestionsInput {
   tripType: string;
   duration: number;
   destinationWeather: string;
+}
+
+export interface DestinationImage {
+  id: string;
+  src: string; // data URI
+  alt: string;
 }
