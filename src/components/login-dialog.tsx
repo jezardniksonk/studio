@@ -33,7 +33,7 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <LogIn size={24} /> Login to PackSmart
+            <LogIn size={24} /> Login to PackSmart AI
           </DialogTitle>
           <DialogDescription>
             Access your saved trips and preferences.

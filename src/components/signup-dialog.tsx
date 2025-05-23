@@ -36,7 +36,7 @@ export function SignupDialog({ isOpen, onClose }: SignupDialogProps) {
             <UserPlus size={24} /> Create Account
           </DialogTitle>
           <DialogDescription>
-            Join PackSmart to save your travel plans and packing lists.
+            Join PackSmart AI to save your travel plans and packing lists.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSignup}>

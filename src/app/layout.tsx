@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'PackSmart - Smart Packing Assistant',
+  title: 'PackSmart AI - Smart Packing Assistant',
   description: 'AI-powered packing lists for your next adventure.',
 };
 

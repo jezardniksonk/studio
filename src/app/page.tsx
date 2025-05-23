@@ -220,7 +220,7 @@ export default function HomePage() {
 
       <footer className="w-full max-w-4xl mt-12 pt-6 border-t border-border text-center">
         <p className="text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} PackSmart. Travel smarter, not harder.
+          &copy; {new Date().getFullYear()} PackSmart AI. Travel smarter, not harder.
         </p>
       </footer>
     </div>
