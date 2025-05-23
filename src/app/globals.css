@@ -41,6 +41,7 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --brand-color: 33 100% 50%; /* Orange for brand elements */
   }
   .dark {
     --background: 224 71.4% 4.1%; /* Dark Blueish Gray */
@@ -75,6 +76,7 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --brand-color: 33 100% 55%; /* Slightly brighter orange for brand elements in dark mode */
   }
 }
 
