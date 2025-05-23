@@ -7,7 +7,7 @@ import { PackingList } from '@/components/packing-list';
 import { WeatherDisplay } from '@/components/weather-display';
 import { DestinationImagesDisplay } from '@/components/destination-images-display';
 import { Logo } from '@/components/logo';
-import type { TripDetails, PackingItem, WeatherInfo, DestinationImage, HistoricalTrip } from '@/lib/types';
+import type { TripDetails, PackingItem, WeatherInfo, DestinationImage, HistoricalTrip, DailyForecast } from '@/lib/types';
 import { getPackingSuggestionsAction, getForgottenItemSuggestionsAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -78,10 +78,14 @@ export default function HomePage() {
       });
       setPackingList([]);
       // Ensure weather object on error matches the new WeatherInfo structure
+      const placeholderForecasts: DailyForecast[] = [
+        { label: 'Yesterday', description: 'Could not fetch weather data.', temperature: 'N/A' },
+        { label: 'Today', description: 'Could not fetch weather data.', temperature: 'N/A' },
+        { label: 'Tomorrow', description: 'Could not fetch weather data.', temperature: 'N/A' },
+      ];
       setWeather({ 
         destination: data.destination, 
-        description: "Could not fetch weather data.", 
-        temperature: null 
+        forecasts: placeholderForecasts
       }); 
       setDestinationImages(null);
     } finally {

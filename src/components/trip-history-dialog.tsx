@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { HistoricalTrip, PackingItem, DestinationImage } from '@/lib/types';
+import type { HistoricalTrip, PackingItem, DestinationImage, WeatherInfo } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Package, CalendarDays, Cloud, Camera, Trash2, MapPin, Briefcase, Thermometer } from 'lucide-react';
+import { Package, CalendarDays, Cloud, Camera, Trash2, MapPin, Briefcase, Thermometer, Sun, CloudRain, CloudSnow, Zap, CloudFog, CloudDrizzle } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 
@@ -29,6 +29,20 @@ interface TripHistoryDialogProps {
   history: HistoricalTrip[];
   onClearHistory: () => void;
 }
+
+const getWeatherIcon = (description: string | undefined) => {
+  if (!description) return <Sun className="h-4 w-4 text-yellow-500" />;
+  const lowerDescription = description.toLowerCase();
+  if (lowerDescription.includes('thunderstorm') || lowerDescription.includes('storm')) return <Zap className="h-4 w-4 text-yellow-400" />;
+  if (lowerDescription.includes('drizzle')) return <CloudDrizzle className="h-4 w-4 text-blue-300" />;
+  if (lowerDescription.includes('rain') || lowerDescription.includes('showers')) return <CloudRain className="h-4 w-4 text-blue-400" />;
+  if (lowerDescription.includes('snow')) return <CloudSnow className="h-4 w-4 text-sky-300" />;
+  if (lowerDescription.includes('fog') || lowerDescription.includes('mist')) return <CloudFog className="h-4 w-4 text-gray-500" />;
+  if (lowerDescription.includes('cloud') || lowerDescription.includes('overcast')) return <Cloud className="h-4 w-4 text-gray-400" />;
+  if (lowerDescription.includes('sun') || lowerDescription.includes('clear')) return <Sun className="h-4 w-4 text-yellow-500" />;
+  return <Sun className="h-4 w-4 text-yellow-500" />; 
+};
+
 
 export function TripHistoryDialog({ isOpen, onClose, history, onClearHistory }: TripHistoryDialogProps) {
   return (
@@ -52,7 +66,9 @@ export function TripHistoryDialog({ isOpen, onClose, history, onClearHistory }: 
         ) : (
           <ScrollArea className="flex-grow my-4 pr-2">
             <Accordion type="single" collapsible className="w-full space-y-3">
-              {history.map((trip) => (
+              {history.map((trip) => {
+                const todaysForecastFromHistory = trip.weather?.forecasts.find(f => f.label === 'Today') || trip.weather?.forecasts[0];
+                return (
                 <AccordionItem value={trip.id} key={trip.id} className="border rounded-lg shadow-sm bg-card">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full">
@@ -75,16 +91,19 @@ export function TripHistoryDialog({ isOpen, onClose, history, onClearHistory }: 
                         <h4 className="font-semibold mb-1 flex items-center gap-1"><CalendarDays size={16}/> Duration:</h4>
                         <p className="text-muted-foreground">{trip.tripDetails.duration} days</p>
                       </div>
-                      {trip.weather && (
+                      {todaysForecastFromHistory && (
                         <div className="md:col-span-2">
-                          <h4 className="font-semibold mb-1 flex items-center gap-1"><Cloud size={16}/> Weather:</h4>
-                          {trip.weather.temperature && (
-                            <p className="text-muted-foreground flex items-center gap-1">
-                              <Thermometer size={14} className="text-primary" /> 
-                              {trip.weather.temperature}
-                            </p>
-                          )}
-                          <p className="text-muted-foreground">{trip.weather.description}</p>
+                          <h4 className="font-semibold mb-1 flex items-center gap-1"><Cloud size={16}/> Weather (Today's at planning time):</h4>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            {getWeatherIcon(todaysForecastFromHistory.description)}
+                            <span>{todaysForecastFromHistory.description}</span>
+                            {todaysForecastFromHistory.temperature && todaysForecastFromHistory.temperature !== 'N/A' && (
+                                <span className="flex items-center gap-1">
+                                <Thermometer size={14} className="text-primary" /> 
+                                {todaysForecastFromHistory.temperature}
+                                </span>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -108,8 +127,8 @@ export function TripHistoryDialog({ isOpen, onClose, history, onClearHistory }: 
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-1"><Camera size={16}/> Destination Images:</h4>
                         <div className="flex flex-wrap gap-2">
-                          {trip.destinationImages.slice(0, 5).map((img) => ( // Show up to 5 thumbnails
-                            img.src && !img.src.startsWith('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=') && ( // Check for valid non-placeholder image
+                          {trip.destinationImages.slice(0, 5).map((img) => ( 
+                            img.src && !img.src.startsWith('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=') && ( 
                               <div key={img.id} className="w-16 h-16 rounded-md overflow-hidden border">
                                 <Image
                                   src={img.src}
@@ -127,7 +146,7 @@ export function TripHistoryDialog({ isOpen, onClose, history, onClearHistory }: 
                     )}
                   </AccordionContent>
                 </AccordionItem>
-              ))}
+              )})}
             </Accordion>
           </ScrollArea>
         )}
