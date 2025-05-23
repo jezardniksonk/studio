@@ -14,7 +14,8 @@ export interface PackingItem {
 
 export interface WeatherInfo {
   destination: string;
-  forecast: string; // e.g., "Sunny with a high of 25°C"
+  description: string; // e.g., "Partly cloudy"
+  temperature: string | null; // e.g., "22°C"
   icon?: string; // Optional: for weather icon representation
 }
 

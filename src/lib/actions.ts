@@ -8,30 +8,33 @@ import { generateDestinationImages } from '@/ai/flows/generate-destination-image
 import {nanoid} from 'nanoid';
 
 
-// Mock weather data - replace with actual API call in a real app
-const MOCK_WEATHER_DATA: Record<string, string> = {
-  'paris': 'Partly cloudy with a high of 22°C. Chance of light showers in the evening.',
-  'tokyo': 'Sunny and warm, around 28°C. Perfect for sightseeing!',
-  'new york': 'Cooler, around 18°C with a chance of rain. Bring a jacket.',
-  'london': 'Classic London weather: Overcast with intermittent drizzle, 15°C.',
-  'bali': 'Hot and humid, 30°C with afternoon thunderstorms likely.',
-  'rome': 'Sunny and pleasant, 25°C. Ideal for exploring ancient ruins.',
-  'barcelona': 'Warm and sunny, 27°C. Don\'t forget your sunglasses!',
-  'berlin': 'Mild, around 20°C with a mix of sun and clouds.',
-  'sydney': 'Sunny skies and 24°C. Great for beach activities.',
-  'dubai': 'Very hot, reaching 38°C. Stay hydrated and seek shade.',
-  'reykjavik': 'Chilly and windy, around 8°C. Pack warm layers!',
-  'cancun': 'Hot and sunny, 29°C. Perfect beach weather!',
-  'amsterdam': 'Cloudy with a chance of showers, 17°C. An umbrella might be useful.',
-  'mount everest': 'Extremely cold and snowy, -20°C. Specialized gear required.',
-  'sahara desert': 'Scorching hot during the day (40°C+), cold at night. Pack accordingly.',
+const MOCK_WEATHER_DATA: Record<string, { description: string; temperature: string }> = {
+  'paris': { description: 'Partly cloudy. Chance of light showers in the evening.', temperature: '22°C' },
+  'tokyo': { description: 'Sunny and warm. Perfect for sightseeing!', temperature: '28°C' },
+  'new york': { description: 'Cooler with a chance of rain. Bring a jacket.', temperature: '18°C' },
+  'london': { description: 'Classic London weather: Overcast with intermittent drizzle.', temperature: '15°C' },
+  'bali': { description: 'Hot and humid with afternoon thunderstorms likely.', temperature: '30°C' },
+  'rome': { description: 'Sunny and pleasant. Ideal for exploring ancient ruins.', temperature: '25°C' },
+  'barcelona': { description: 'Warm and sunny. Don\'t forget your sunglasses!', temperature: '27°C' },
+  'berlin': { description: 'Mild with a mix of sun and clouds.', temperature: '20°C' },
+  'sydney': { description: 'Sunny skies. Great for beach activities.', temperature: '24°C' },
+  'dubai': { description: 'Very hot. Stay hydrated and seek shade.', temperature: '38°C' },
+  'reykjavik': { description: 'Chilly and windy. Pack warm layers!', temperature: '8°C' },
+  'cancun': { description: 'Hot and sunny. Perfect beach weather!', temperature: '29°C' },
+  'amsterdam': { description: 'Cloudy with a chance of showers. An umbrella might be useful.', temperature: '17°C' },
+  'mount everest': { description: 'Extremely cold and snowy. Specialized gear required.', temperature: '-20°C' },
+  'sahara desert': { description: 'Scorching hot during the day, cold at night. Pack accordingly.', temperature: '40°C+' },
 };
 
-async function fetchWeather(destination: string): Promise<string> {
+async function fetchWeather(destination: string): Promise<{ description: string; temperature: string | null }> {
   // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 500));
   const cityKey = destination.toLowerCase().split(',')[0].trim(); // Use first part of destination as key
-  return MOCK_WEATHER_DATA[cityKey] || `Pleasant weather expected in ${destination}. Pack for moderate temperatures.`;
+  const weatherData = MOCK_WEATHER_DATA[cityKey];
+  if (weatherData) {
+    return { description: weatherData.description, temperature: weatherData.temperature };
+  }
+  return { description: `Pleasant weather expected in ${destination}. Pack for moderate temperatures.`, temperature: null };
 }
 
 export async function getPackingSuggestionsAction(
@@ -43,12 +46,22 @@ export async function getPackingSuggestionsAction(
   error?: string 
 }> {
   try {
-    const destinationWeather = await fetchWeather(tripDetails.destination);
+    const weatherDetails = await fetchWeather(tripDetails.destination);
+
+    const weatherForState: WeatherInfo = {
+      destination: tripDetails.destination,
+      description: weatherDetails.description,
+      temperature: weatherDetails.temperature,
+    };
+
+    const aiWeatherDescription = weatherDetails.temperature
+      ? `${weatherDetails.description} The temperature is around ${weatherDetails.temperature}.`
+      : weatherDetails.description;
 
     const aiInput: AIPackingSuggestionsInput = {
       tripType: tripDetails.tripType,
       duration: tripDetails.duration,
-      destinationWeather: destinationWeather,
+      destinationWeather: aiWeatherDescription,
     };
 
     // Fetch packing suggestions and images in parallel
@@ -64,18 +77,13 @@ export async function getPackingSuggestionsAction(
       isSuggestion: true,
     }));
     
-    const weather: WeatherInfo = {
-      destination: tripDetails.destination,
-      forecast: destinationWeather,
-    };
-
     const destinationImages: DestinationImage[] = imageResult.imageDataUris.map((uri, index) => ({
       id: nanoid(),
       src: uri,
       alt: `Destination image ${index + 1} for ${tripDetails.destination}`,
     }));
 
-    return { packingList, weather, destinationImages };
+    return { packingList, weather: weatherForState, destinationImages };
 
   } catch (error) {
     console.error('Error getting packing suggestions or images:', error);
@@ -85,7 +93,8 @@ export async function getPackingSuggestionsAction(
     }
     const weatherOnError: WeatherInfo = {
       destination: tripDetails.destination,
-      forecast: 'Could not fetch weather data.',
+      description: 'Could not fetch weather data.',
+      temperature: null,
     };
     return { 
       packingList: [], 

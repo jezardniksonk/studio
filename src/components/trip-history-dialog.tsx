@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Package, CalendarDays, Cloud, Camera, Trash2, MapPin, Briefcase } from 'lucide-react';
+import { Package, CalendarDays, Cloud, Camera, Trash2, MapPin, Briefcase, Thermometer } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 
@@ -76,9 +76,15 @@ export function TripHistoryDialog({ isOpen, onClose, history, onClearHistory }: 
                         <p className="text-muted-foreground">{trip.tripDetails.duration} days</p>
                       </div>
                       {trip.weather && (
-                        <div>
+                        <div className="md:col-span-2">
                           <h4 className="font-semibold mb-1 flex items-center gap-1"><Cloud size={16}/> Weather:</h4>
-                          <p className="text-muted-foreground">{trip.weather.forecast}</p>
+                          {trip.weather.temperature && (
+                            <p className="text-muted-foreground flex items-center gap-1">
+                              <Thermometer size={14} className="text-primary" /> 
+                              {trip.weather.temperature}
+                            </p>
+                          )}
+                          <p className="text-muted-foreground">{trip.weather.description}</p>
                         </div>
                       )}
                     </div>

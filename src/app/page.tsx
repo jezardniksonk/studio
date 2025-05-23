@@ -77,7 +77,12 @@ export default function HomePage() {
         variant: 'destructive',
       });
       setPackingList([]);
-      setWeather({ destination: data.destination, forecast: "Could not fetch weather data."}); 
+      // Ensure weather object on error matches the new WeatherInfo structure
+      setWeather({ 
+        destination: data.destination, 
+        description: "Could not fetch weather data.", 
+        temperature: null 
+      }); 
       setDestinationImages(null);
     } finally {
       setIsLoading(false);
