@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,6 +11,7 @@ import { getPackingSuggestionsAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { nanoid } from 'nanoid';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function HomePage() {
   const [tripDetails, setTripDetails] = useState<TripDetails | null>(null);
@@ -79,8 +81,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center p-4 md:p-8 bg-background font-sans">
-      <header className="w-full max-w-4xl mb-8">
+      <header className="w-full max-w-4xl mb-8 flex justify-between items-center">
         <Logo />
+        <ThemeToggle />
       </header>
 
       <main className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-8">
